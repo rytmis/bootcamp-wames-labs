@@ -1,4 +1,5 @@
-bootcamp-wames-labs
-===================
+# Windows Azure BootCamp -- Media Services #
 
-Hands-on labs for Windows Azure Media Services
++ [Lab 1: Processing videos using the Management Portal](01-management-portal.md)
++ Lab 2: Processing videos using the Media Services API
++ Lab 3: Web playback
