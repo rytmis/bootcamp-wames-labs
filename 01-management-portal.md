@@ -36,9 +36,21 @@ A dialog for uploading a media file pops up:
 
 ![](images/05-upload-media.png)
 
-If you have a media file that is smaller than 200 MB in size, you can use the From Local option. 
+Because uploading a large file takes a long time, we recommend that you use a small, local media file for this hands-on lab.
 
-If your media file is larger than 200 MB in size, you will have to upload it to a storage account first. Once the file is in a storage account, click the From Storage button.
+### Uploading a local file ###
+
+If you have a media file that is smaller than 200 MB in size, you can use the From Local option. Browse for the file on your local computer, select it and give it a name:
+
+![](images/06a-accept-local-upload.png)
+
+Click on the check mark to begin the upload.
+
+### Uploading a file from a storage account ###
+
+If your media file is larger than 200 MB in size, you will have to upload it to a storage account first. In order to do that, you will need a client application such as [Azure Storage Explorer](http://azurestorageexplorer.codeplex.com/downloads/get/160100). 
+
+Once the file is in a storage account, click the From Storage button.
 
 A dialog for selecting a media file from a storage account pops up. Navigate to the file you wish to use, select it and click Open:
 
@@ -72,7 +84,12 @@ Once the encoder job has started, go to the Jobs tab to view the status of the e
 
 The encoding job will take a while depending on the length and quality of your media asset and your selected encoding preset. A HD quality 10 minute video encoded with the Playback on PC/Mac (via Flash/Silverlight) preset takes approximately 20 minutes to encode.
 
-Once the encoding job has finished, go to the Content tab and select the new Media Asset. Click on Play in the bottom toolbar to test the playback.
+## Publishing and playback ##
+
+Once the encoding job has finished, go to the Content tab and select the new Media Asset. 
+Click on Publish in the bottom toolbar and then click Yes in the confirmation box that pops up.
+
+Click on Play in the bottom toolbar to test the playback.
 
 ![](images/12-playback.png)
 
