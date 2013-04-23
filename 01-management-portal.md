@@ -16,7 +16,7 @@ A dialog for creating a new Media Service pops up:
 
 ![](images/02-create-media-service.png)
 
-Choose a unique name and a region for your Media Service. For the storage account, you may either create a new account or use an existing one.
+Choose a unique name and a region for your Media Service. For the storage account, you may either create a new account -- or use an existing one, as long as it is in the same region.
 
 Finish this step by clicking on Create Media Service.
 
@@ -89,7 +89,7 @@ The encoding job will take a while depending on the length and quality of your m
 Once the encoding job has finished, go to the Content tab and select the new Media Asset. 
 Click on Publish in the bottom toolbar and then click Yes in the confirmation box that pops up.
 
-Click on Play in the bottom toolbar to test the playback.
+Click on Play in the bottom toolbar to test the playback. At first you may encounter a message that says the player can't connect to the requested media asset -- if that happens, wait a couple of minutes. The publish process takes a while to actually complete.
 
 ![](images/12-playback.png)
 
