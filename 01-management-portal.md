@@ -82,7 +82,7 @@ Once the encoder job has started, go to the Jobs tab to view the status of the e
 
 ![](images/hol1/12-encoding-started.png)
 
-The encoding job will take a while depending on the length and quality of your media asset and your selected encoding preset. A HD quality 10 minute video encoded with the Playback on PC/Mac (via Flash/Silverlight) preset takes approximately 20 minutes to encode.
+The encoding job will take a while depending on the length and quality of your media asset and your selected encoding preset. An HD quality 10 minute video encoded with the "Playback on PC/Mac (via Flash/Silverlight)" preset takes approximately 20 minutes to encode.
 
 ## Publishing and playback ##
 

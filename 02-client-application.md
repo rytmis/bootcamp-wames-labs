@@ -77,6 +77,7 @@ Open up MainWindow.xaml and replace its contents with this bit of XAML:
 Then, open up MainWindow.xaml.cs and replace its contents with this bit of C#:
 
 ```CSharp
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -165,7 +166,7 @@ That gives us a simple interface for wiring up our use of the Media Services API
 
 ## Uploading and encoding media ##
 
-Before we can do anything else, we need to connect to Media Services. Let's start by adding a method that will contain the upload and encode bits. Because we want to keep our UI responsive, let's make use of async support in C#:
+Before we can do anything else, we need to connect to Media Services. Let's start by adding a method to MainWindow that will contain the upload and encode bits. Because we want to keep our UI responsive, let's make use of async support in C#:
 
 ```CSharp
 private async Task<IJob> UploadAndConvertFile(string accountName, string accountKey, string filePath) {
@@ -236,7 +237,7 @@ Now, at this point we've uploaded the file, but the encoding workflow has yet to
 
 ## Wrapping it all up ##
 
-It's time to bring it all together. Before the project will compile, we will have to implement the upload button's click handler. Let's start by disabling the UI controls and getting the contents of the credential fields:
+It's time to bring it all together. Before the project will compile, we will have to implement the upload button's click handler. Let's start by disabling the UI controls and getting the contents of the credential fields. Add another new method to MainWindow:
 
 ```CSharp
 private async void BeginUpload(object sender, RoutedEventArgs e) {
