@@ -156,7 +156,7 @@ The package manager will add the Media Services library along with any additiona
 
 ## Uploading and encoding media ##
 
-Before we can do anything else, we need to connect to Media Services. Let's start by adding a method that will contain the upload and transcode bits. Because we want to keep our UI responsive, let's make use of async support in C#:
+Before we can do anything else, we need to connect to Media Services. Let's start by adding a method that will contain the upload and encode bits. Because we want to keep our UI responsive, let's make use of async support in C#:
 
 ```CSharp
 private async Task<IJob> UploadAndConvertFile(string accountName, string accountKey, string filePath) {
@@ -213,7 +213,7 @@ hlsTask.OutputAssets.AddNew(assetName + " (HLS)", AssetCreationOptions.None);
 return job;
 ```
 
-Now, at this point we've uploaded the file, but the transcoding workflow has yet to be started.
+Now, at this point we've uploaded the file, but the encoding workflow has yet to be started.
 
 ## Wrapping it all up ##
 
@@ -303,4 +303,20 @@ Phew! That's it, you can now run the application. Hit F5, and if all goes well, 
 
 ![](images/hol2/04-running-application.png)
 
+To try it out, you will need to provide your Media Services account name and access key first. You can get them from the Management Portal, by going to your Media Service and clicking on Manage Keys in the bottom toolbar:
 
+![](images/hol2/05-manage-keys.png)
+
+Clicking on the button will pop up a dialog that displays the name of your account along with your primary and secondary access key:
+
+![](images/hol2/06-keys.png)
+
+Copy the account name and primary access key to the application:
+
+![](images/hol2/07-application-with-key.png)
+
+Click on the button labeled Select... and locate a file you want to upload and encode. Then hit the Upload and encode button, and watch the magic happen:
+
+![](images/hol2/08-upload-progress.png)
+
+![](images/hol2/09-encode-progress.png)
