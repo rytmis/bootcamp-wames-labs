@@ -31,7 +31,7 @@ Open up MainWindow.xaml and replace its contents with this bit of XAML:
             <ColumnDefinition Width="Auto"/>
             <ColumnDefinition/>
         </Grid.ColumnDefinitions>
-        <Label Grid.Column="0" Grid.Row="0" Content="Storage account name" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+        <Label Grid.Column="0" Grid.Row="0" Content="Media services account" HorizontalAlignment="Left" VerticalAlignment="Top"/>
         <TextBox x:Name="AccountName" Grid.Column="1" Grid.Row="0" HorizontalAlignment="Left" Height="23" VerticalAlignment="Top" Width="378"/>
         <Label Grid.Column="0" Grid.Row="1" Content="Access key" HorizontalAlignment="Left" VerticalAlignment="Top" Grid.RowSpan="2"/>
         <PasswordBox x:Name="AccountKey" Grid.Column="1" Grid.Row="1" HorizontalAlignment="Left" Height="23" VerticalAlignment="Top" Width="378" />
@@ -50,6 +50,7 @@ Open up MainWindow.xaml and replace its contents with this bit of XAML:
         <Button x:Name="UploadButton" Grid.Column="1" Grid.Row="5" Margin="10 10 10 10" IsEnabled="False" Click="BeginUpload">Upload and encode</Button>
     </Grid>
 </Window>
+
 ```
 
 Then, open up MainWindow.xaml.cs and replace its contents with this bit of C#:
@@ -128,9 +129,6 @@ namespace WamsEncoder {
 			JobState.Canceled,
 			JobState.Canceling
 		};
-
-		private async void BeginUpload(object sender, RoutedEventArgs e) {
-		}
 	}
 }
 
@@ -156,12 +154,12 @@ and press enter:
 
 The package manager will add the Media Services library along with any additional dependencies it might require.
 
-## Uploading media ##
+## Uploading and encoding media ##
 
-Before we can do anything else, we need to connect to Media Services. Let's start by adding a method that will contain the upload and transcode bits:
+Before we can do anything else, we need to connect to Media Services. Let's start by adding a method that will contain the upload and transcode bits. Because we want to keep our UI responsive, let's make use of async support in C#:
 
 ```CSharp
-private IJob UploadAndConvertSelectedFile(string accountName, string accountKey, string filePath) {
+private async Task<IJob> UploadAndConvertFile(string accountName, string accountKey, string filePath) {
 	var mediaContext = new CloudMediaContext(accountName, accountKey);
 }
 ```
@@ -171,10 +169,10 @@ The next step is to create a media asset and add a new file to it:
 ```CSharp
 var assetName = Path.GetFileNameWithoutExtension(filePath);
 
-var asset = mediaContext.Assets.Create(assetName, AssetCreationOptions.StorageEncrypted);
+var asset = await mediaContext.Assets.CreateAsync(assetName, AssetCreationOptions.StorageEncrypted, CancellationToken.None);
 
 var fileName = Path.GetFileName(filePath);
-var file = asset.AssetFiles.Create(fileName);
+var file = await asset.AssetFiles.CreateAsync(fileName, CancellationToken.None);
 ```
 
 Next, we upload the file -- but before we do that, if we want to be notified of the upload progress, we add an event handler that takes care of it:
@@ -182,15 +180,97 @@ Next, we upload the file -- but before we do that, if we want to be notified of 
 ```CSharp
 file.UploadProgressChanged += (o, args) => UpdateProgress(args.Progress);
 
-file.Upload(filePath);
+await Task.Run(() => file.Upload(filePath));
 ```
 
+Note that IAssetFile also contains a method called UploadAsync we could use instead of wrapping the synchronous upload in a Task manually, but it's a bit more tedious to use.
 
+Next, we create a new Media Services job:
 
+```CSharp
+var job = mediaContext.Jobs.Create(string.Format("Convert {0} to Smooth Stream and HLS", assetName));
+```
 
-## Transcoding media to Smooth Streaming and HLS ##
+A job consists of a number of steps. Each step requires a media processor, input assets and output assets. As a first step, let's consume the file we just uploaded and convert it to Smooth Streaming.
 
-Finally, add a new XML file to the project. Call it PackagerPreset.xml and paste in this bit here:
+```CSharp
+var encoder = GetMediaProcessor(mediaContext, "Windows Azure Media Encoder", "2.2.0.0");
+var smoothStreamTask = job.Tasks.AddNew("Encode to Smooth Streams", encoder, "H264 Smooth Streaming 720p", TaskOptions.None);
+smoothStreamTask.InputAssets.Add(asset);
+
+var smoothStreamAsset = smoothStreamTask.OutputAssets.AddNew(assetName + " (Smooth Stream)", AssetCreationOptions.None);
+```
+
+Almost there! Now, all we need to do to finish the workflow is to convert the Smooth Streaming asset to HLS and return the resulting job:
+
+```CSharp
+var packager = GetMediaProcessor(mediaContext, "Windows Azure Media Packager", "2.3");
+
+var hlsTask = job.Tasks.AddNew("Package as HLS", packager, PackagerPreset, TaskOptions.None);
+hlsTask.InputAssets.Add(smoothStreamAsset);
+hlsTask.OutputAssets.AddNew(assetName + " (HLS)", AssetCreationOptions.None);
+
+return job;
+```
+
+Now, at this point we've uploaded the file, but the transcoding workflow has yet to be started.
+
+## Wrapping it all up ##
+
+It's time to bring it all together. Before the project will compile, we will have to implement the upload button's click handler. Let's start by disabling the UI controls and getting the contents of the credential fields:
+
+```CSharp
+private async void BeginUpload(object sender, RoutedEventArgs e) {
+	DisableControls();
+
+	var accountName = AccountName.Text;
+	var accountKey = AccountKey.Password;
+}
+```
+
+We then invoke the method we wrote before:
+
+```CSharp
+var job = await UploadAndConvertFile(accountName, accountKey, selectedFile);
+
+await job.SubmitAsync();
+```
+
+Now that the job has been submitted for processing, we'll add monitoring by way of starting a Task that will periodically refresh the media context and re-read the status of the job:
+
+```CSharp
+await Task.Run(() => {
+	while(true) {
+		Thread.Sleep(2500);
+
+		// Recreating the context seems to be necessary in order to actually refresh all the entity data
+		var mediaContext = new CloudMediaContext(accountName, accountKey);
+
+		var refreshedJob = mediaContext.Jobs.Where(j => j.Id == job.Id).AsEnumerable().FirstOrDefault();
+		if (refreshedJob == null) { continue; }
+
+		if (FinishedStates.Contains(refreshedJob.State)) {
+			break;
+		}
+
+		var currentTask = refreshedJob.Tasks.FirstOrDefault(t => t.State == JobState.Processing);
+		if (currentTask == null) { continue; }
+
+		SetStatus(currentTask.Name);
+		UpdateProgress(currentTask.Progress);
+	}
+});
+```
+
+The task will run until the job has completed, at which point we can finish up:
+
+```CSharp
+EnableControls();
+```
+
+That's it for the program code. There's one last thing to do before we can run this thing: add the configuration for the Windows Azure Media Packager task.
+
+Add a new XML file to the project. Call it PackagerPreset.xml and paste in this bit here:
 
 ```xml
 <taskDefinition xmlns="http://schemas.microsoft.com/iis/media/v4/TM/TaskDefinition#">
@@ -218,3 +298,9 @@ Finally, add a new XML file to the project. Call it PackagerPreset.xml and paste
 	</taskCode>
 </taskDefinition>
 ```
+
+Phew! That's it, you can now run the application. Hit F5, and if all goes well, you should see the totally gorgeous UI:
+
+![](images/hol2/04-running-application.png)
+
+
