@@ -76,7 +76,13 @@ namespace WamsEncoder {
 		}
 
 		private static string ReadPreset() {
-			return File.ReadAllText(Path.Combine(Assembly.GetEntryAssembly().CodeBase, "PackagerPreset.xml"));
+			var codebaseUri = new Uri(Assembly.GetEntryAssembly().CodeBase);
+
+			var invocationDirectory = Path.GetDirectoryName(codebaseUri.LocalPath);
+
+			var presetFilePath = Path.Combine(invocationDirectory, "PackagerPreset.xml");
+
+			return File.ReadAllText(presetFilePath);
 		}
 
 		private void SelectFileClicked(object sender, RoutedEventArgs e) {
