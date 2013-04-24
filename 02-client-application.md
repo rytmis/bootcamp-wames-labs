@@ -5,11 +5,32 @@
 + Visual Studio 2012 (Visual Studio 2010 with the NuGet Package Manager extension should also work)
 + Windows Azure account
 
-## Wiring up the UI ##
+## Creating the project ##
 
 Let's start by creating a new WPF application project. Open up Visual Studio, click on New Project and select Visual C# -> Windows -> WPF Application. Type in a name and file system location for your application and click OK:
 
 ![](images/hol2/01-create-wpf-project.png)
+
+## Adding the Media Services API ##
+
+Now that you have the project skeleton ready, let's connect to Media Services.
+
+Go to Tools -> Library Package Manager -> Package Manager Console:
+
+![](images/hol2/02-package-manager-console.png)
+
+Type in:
+
+> Install-Package WindowsAzure.MediaServices -Version 2.0.1.1
+
+and press enter:
+
+![](images/hol2/03-package-manager-console.png)
+
+The package manager will add the Media Services library along with any additional dependencies it might require.
+
+
+## Wiring up the UI ##
 
 Open up MainWindow.xaml and replace its contents with this bit of XAML:
 
@@ -142,37 +163,25 @@ namespace WamsEncoder {
 
 That gives us a simple interface for wiring up our use of the Media Services API.
 
-## Adding the Media Services API ##
-
-Now that you have the project skeleton ready, let's connect to Media Services.
-
-Go to Tools -> Library Package Manager -> Package Manager Console:
-
-![](images/hol2/02-package-manager-console.png)
-
-Type in:
-
-> Install-Package WindowsAzure.MediaServices -Version 2.0.1.1
-
-and press enter:
-
-![](images/hol2/03-package-manager-console.png)
-
-The package manager will add the Media Services library along with any additional dependencies it might require.
-
 ## Uploading and encoding media ##
 
 Before we can do anything else, we need to connect to Media Services. Let's start by adding a method that will contain the upload and encode bits. Because we want to keep our UI responsive, let's make use of async support in C#:
 
 ```CSharp
 private async Task<IJob> UploadAndConvertFile(string accountName, string accountKey, string filePath) {
+	SetStatus("Connecting to Media Services");
+
 	var mediaContext = new CloudMediaContext(accountName, accountKey);
+
+	// We will add the next bits below this line
 }
 ```
 
 The next step is to create a media asset and add a new file to it:
 
 ```CSharp
+SetStatus("Creating asset");
+
 var assetName = Path.GetFileNameWithoutExtension(filePath);
 
 var asset = await mediaContext.Assets.CreateAsync(assetName, AssetCreationOptions.StorageEncrypted, CancellationToken.None);
@@ -186,6 +195,8 @@ Next, we upload the file -- but before we do that, if we want to be notified of 
 ```CSharp
 file.UploadProgressChanged += (o, args) => UpdateProgress(args.Progress);
 
+SetStatus("Uploading file");
+
 await Task.Run(() => file.Upload(filePath));
 ```
 
@@ -194,6 +205,8 @@ Note that IAssetFile also contains a method called UploadAsync we could use inst
 Next, we create a new Media Services job:
 
 ```CSharp
+SetStatus("Creating encoding job");
+
 var job = mediaContext.Jobs.Create(string.Format("Convert {0} to Smooth Stream and HLS", assetName));
 ```
 
@@ -231,6 +244,8 @@ private async void BeginUpload(object sender, RoutedEventArgs e) {
 
 	var accountName = AccountName.Text;
 	var accountKey = AccountKey.Password;
+
+	// We will add the next bits below this line
 }
 ```
 
@@ -271,6 +286,8 @@ await Task.Run(() => {
 The task will run until the job has completed, at which point we can finish up:
 
 ```CSharp
+SetStatus("Finished");
+
 EnableControls();
 ```
 
@@ -304,6 +321,8 @@ Add a new XML file to the project. Call it PackagerPreset.xml and paste in this 
 	</taskCode>
 </taskDefinition>
 ```
+
+Select the file in Solution Explorer, set its Type to Content and Build Action to Copy If Newer.
 
 Phew! That's it, you can now run the application. Hit F5, and if all goes well, you should see the totally gorgeous UI:
 
