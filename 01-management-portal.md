@@ -2,7 +2,7 @@
 
 ## Prerequisites ##
 
-In order to complete this lab, you will need a Windows Azure account.
+In order to complete this lab, you will need a Windows Azure account and a video file. If you have a cell phone capable of recording video or a web cam and suitable recording software, you can use them to create a short clip for testing. 
 
 ## Creating a new Media Services account ##
 
@@ -48,7 +48,7 @@ Click on the check mark to begin the upload.
 
 ### Uploading a file from a storage account ###
 
-If your media file is larger than 200 MB in size, you will have to upload it to a storage account first. In order to do that, you will need a client application such as [Azure Storage Explorer](http://azurestorageexplorer.codeplex.com/downloads/get/160100). 
+If your media file is larger than 200 MB in size, you will have to upload it to a storage account first. In order to do that, you can use a client application such as [CloudXplorer](http://clumsyleaf.com/products/cloudxplorer). 
 
 Once the file is in a storage account, click the From Storage button.
 

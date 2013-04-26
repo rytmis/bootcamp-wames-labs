@@ -2,15 +2,23 @@
 
 ## Prerequisites ##
 
-+ Visual Studio 2012 (there is an [alternate version of the lab for Visual Studio 2010](02-client-application-vs2010.md))
-+ Windows Azure SDK for .NET (VS 2012) 1.8.1
++ Visual Studio 2010 (there is an [alternate version of the lab for Visual Studio 2012](02-client-application.md))
++ Windows Azure SDK for .NET (VS 2010 SP1) 1.8.1
 + Windows Azure account
 
 ## Creating the project ##
 
 Let's start by creating a new WPF application project. Open up Visual Studio, click on New Project and select Visual C# -> Windows -> WPF Application. Type in a name and file system location for your application and click OK:
 
-![](images/hol2/01-create-wpf-project.png)
+![](images/hol2b/01-create-wpf-project.png)
+
+WPF projects in Visual Studio 2010 target the .NET Framework 4 Client Profile by default. We will be using libraries that are not available in the Client Profile, so we need to change the target framework.
+
+Once the solution is created, right-click on the project node in Solution Explorer:
+
+![](images/hol2b/01b-project-properties.png)
+
+From the Application tab, open the Target framework dropdown and select ".NET Framework 4". Press Ctrl+S to save the project properties. You may now close the properties window.
 
 ## Adding the Media Services API ##
 
@@ -18,7 +26,7 @@ Now that you have the project skeleton ready, let's connect to Media Services.
 
 Go to Tools -> Library Package Manager -> Package Manager Console:
 
-![](images/hol2/02-package-manager-console.png)
+![](images/hol2b/02-package-manager-console.png)
 
 Type in:
 
@@ -26,7 +34,7 @@ Type in:
 
 and press enter:
 
-![](images/hol2/03-package-manager-console.png)
+![](images/hol2b/03-package-manager-console.png)
 
 The package manager will add the Media Services library along with any additional dependencies it might require.
 
@@ -72,7 +80,6 @@ Open up MainWindow.xaml and replace its contents with this bit of XAML:
         <Button x:Name="UploadButton" Grid.Column="1" Grid.Row="5" Margin="10 10 10 10" IsEnabled="False" Click="BeginUpload">Upload and encode</Button>
     </Grid>
 </Window>
-
 ```
 
 Then, open up MainWindow.xaml.cs and replace its contents with this bit of C#:
@@ -160,17 +167,16 @@ namespace WamsEncoder {
 		};
 	}
 }
-
 ```
 
 That gives us a simple interface for wiring up our use of the Media Services API.
 
 ## Uploading and encoding media ##
 
-Before we can do anything else, we need to connect to Media Services. Let's start by adding a method to MainWindow that will contain the upload and encode bits. Because we want to keep our UI responsive, let's make use of async support in C#:
+Before we can do anything else, we need to connect to Media Services. Let's start by adding a method to MainWindow that will contain the upload and encode bits:
 
 ```CSharp
-private async Task<IJob> UploadAndConvertFile(string accountName, string accountKey, string filePath) {
+private IJob UploadAndConvertFile(string accountName, string accountKey, string filePath) {
 	SetStatus("Connecting to Media Services");
 
 	var mediaContext = new CloudMediaContext(accountName, accountKey);
@@ -186,10 +192,10 @@ SetStatus("Creating asset");
 
 var assetName = Path.GetFileNameWithoutExtension(filePath);
 
-var asset = await mediaContext.Assets.CreateAsync(assetName, AssetCreationOptions.StorageEncrypted, CancellationToken.None);
+var asset = mediaContext.Assets.Create(assetName, AssetCreationOptions.StorageEncrypted);
 
 var fileName = Path.GetFileName(filePath);
-var file = await asset.AssetFiles.CreateAsync(fileName, CancellationToken.None);
+var file = asset.AssetFiles.Create(fileName);
 ```
 
 Next, we upload the file -- but before we do that, if we want to be notified of the upload progress, we add an event handler that takes care of it:
@@ -199,10 +205,8 @@ file.UploadProgressChanged += (o, args) => UpdateProgress(args.Progress);
 
 SetStatus("Uploading file");
 
-await Task.Run(() => file.Upload(filePath));
+file.Upload(filePath);
 ```
-
-Note that IAssetFile also contains a method called UploadAsync we could use instead of wrapping the synchronous upload in a Task manually, but it's a bit more tedious to use.
 
 Next, we create a new Media Services job:
 
@@ -247,51 +251,53 @@ private async void BeginUpload(object sender, RoutedEventArgs e) {
 	var accountName = AccountName.Text;
 	var accountKey = AccountKey.Password;
 
-	// We will add the next bits below this line
+    Task.Factory.StartNew(() =>
+    {
+        // We will add the next bits below this line
+    })
+    .ContinueWith(t => {
+        SetStatus("Finished");
+
+        EnableControls();
+    }, TaskScheduler.FromCurrentSynchronizationContext());
 }
 ```
+
+Wrapping the long-running execution in a background task prevents the UI from freezing up.
 
 We then invoke the method we wrote before:
 
 ```CSharp
-var job = await UploadAndConvertFile(accountName, accountKey, selectedFile);
+var job = UploadAndConvertFile(accountName, accountKey, selectedFile);
 
-await job.SubmitAsync();
+job.Submit();
 ```
 
 Now that the job has been submitted for processing, we'll add monitoring by way of starting a Task that will periodically refresh the media context and re-read the status of the job:
 
 ```CSharp
-await Task.Run(() => {
-	while(true) {
-		Thread.Sleep(2500);
+while(true) {
+	Thread.Sleep(2500);
 
-		// Recreating the context seems to be necessary in order to actually refresh all the entity data
-		var mediaContext = new CloudMediaContext(accountName, accountKey);
+	// Recreating the context seems to be necessary in order to actually refresh all the entity data
+	var mediaContext = new CloudMediaContext(accountName, accountKey);
 
-		var refreshedJob = mediaContext.Jobs.Where(j => j.Id == job.Id).AsEnumerable().FirstOrDefault();
-		if (refreshedJob == null) { continue; }
+	var refreshedJob = mediaContext.Jobs.Where(j => j.Id == job.Id).AsEnumerable().FirstOrDefault();
+	if (refreshedJob == null) { continue; }
 
-		if (FinishedStates.Contains(refreshedJob.State)) {
-			break;
-		}
-
-		var currentTask = refreshedJob.Tasks.FirstOrDefault(t => t.State == JobState.Processing);
-		if (currentTask == null) { continue; }
-
-		SetStatus(currentTask.Name);
-		UpdateProgress(currentTask.Progress);
+	if (FinishedStates.Contains(refreshedJob.State)) {
+		break;
 	}
-});
+
+	var currentTask = refreshedJob.Tasks.FirstOrDefault(t => t.State == JobState.Processing);
+	if (currentTask == null) { continue; }
+
+	SetStatus(currentTask.Name);
+	UpdateProgress(currentTask.Progress);
+}
 ```
 
-The task will run until the job has completed, at which point we can finish up:
-
-```CSharp
-SetStatus("Finished");
-
-EnableControls();
-```
+The loop will run until the job has completed, at which point our ContinueWith callback will be invoked and the UI will be enabled again.
 
 That's it for the program code. There's one last thing to do before we can run this thing: add the configuration for the Windows Azure Media Packager task.
 
