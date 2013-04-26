@@ -1,5 +1,7 @@
 # Processing videos using the Management Portal #
 
+**NOTE: This lab involves using Media Services processor tasks to transcode videos. These tasks are billed at $1.99 / GB (in + out combined)**
+
 ## Prerequisites ##
 
 In order to complete this lab, you will need a Windows Azure account and a video file. If you have a cell phone capable of recording video or a web cam and suitable recording software, you can use them to create a short clip for testing. 

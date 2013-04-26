@@ -1,5 +1,7 @@
 # Uploading and encoding media from a client application #
 
+**NOTE: This lab involves using Media Services processor tasks to transcode videos. These tasks are billed at $1.99 / GB (in + out combined)**
+
 ## Prerequisites ##
 
 + Visual Studio 2012 (there is an [alternate version of the lab for Visual Studio 2010](02-client-application-vs2010.md))
