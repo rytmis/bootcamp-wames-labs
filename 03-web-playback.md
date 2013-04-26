@@ -1,6 +1,8 @@
 # Web Playback #
 
-This lab is intended for exploring Media Services. It consists of an ASP.NET MVC web application that lists and provides a player for the media assets that have [On Demand Origin Locators](http://msdn.microsoft.com/en-us/library/windowsazure/hh974308.aspx) associated with them -- that is, assets which are available for streaming from within your Media Service.
+This lab is a starting point for exploring Media Services. There is no predefined goal -- take the project for a quick spin and play around. 
+
+It consists of an ASP.NET MVC web application that lists and provides a player for the media assets that have [On Demand Origin Locators](http://msdn.microsoft.com/en-us/library/windowsazure/hh974308.aspx) associated with them -- that is, assets which are available for streaming from within your Media Service.
 
 ## Getting the source ##
 
