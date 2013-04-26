@@ -4,7 +4,9 @@
 
 ## Prerequisites ##
 
-In order to complete this lab, you will need a Windows Azure account and a video file. If you have a cell phone capable of recording video or a web cam and suitable recording software, you can use them to create a short clip for testing. 
+In order to complete this lab, you will need a Windows Azure account and a video file in one of the [supported formats](http://msdn.microsoft.com/en-us/library/windowsazure/hh973634.aspx). If you have a cell phone capable of recording video or a web cam and suitable recording software, you can use them to create a short clip for testing.
+
+If you don't have a clip of your own, a good candidate for testing is the [iPod version of the Big Buck Bunny clip](http://download.blender.org/peach/bigbuckbunny_movies/BigBuckBunny_320x180.mp4).
 
 ## Creating a new Media Services account ##
 
