@@ -147,11 +147,12 @@ namespace WamsEncoder {
 			});
 		}
 
-		private static IMediaProcessor GetMediaProcessor(CloudMediaContext mediaContext, string name, string version) {
+		private static IMediaProcessor GetMediaProcessor(CloudMediaContext mediaContext, string name) {
 			return mediaContext.MediaProcessors
-								.Where(p => p.Name == name && p.Version == version)
+								.Where(p => p.Name == name)
 								.AsEnumerable()
-								.First();
+								.OrderBy(p => p.Version)								
+								.LastOrDefault();
 		}
 
 		private static readonly IEnumerable<JobState> FinishedStates = new List<JobState> {
@@ -217,7 +218,7 @@ var job = mediaContext.Jobs.Create(string.Format("Convert {0} to Smooth Stream a
 A job consists of a number of steps. Each step requires a media processor, input assets and output assets. As a first step, let's consume the file we just uploaded and convert it to Smooth Streaming.
 
 ```CSharp
-var encoder = GetMediaProcessor(mediaContext, "Windows Azure Media Encoder", "2.2.0.0");
+var encoder = GetMediaProcessor(mediaContext, "Windows Azure Media Encoder");
 var smoothStreamTask = job.Tasks.AddNew("Encode to Smooth Streams", encoder, "H264 Smooth Streaming 720p", TaskOptions.None);
 smoothStreamTask.InputAssets.Add(asset);
 
@@ -227,7 +228,7 @@ var smoothStreamAsset = smoothStreamTask.OutputAssets.AddNew(assetName + " (Smoo
 Almost there! Now, all we need to do to finish the workflow is to convert the Smooth Streaming asset to HLS and return the resulting job:
 
 ```CSharp
-var packager = GetMediaProcessor(mediaContext, "Windows Azure Media Packager", "2.3");
+var packager = GetMediaProcessor(mediaContext, "Windows Azure Media Packager");
 
 var hlsTask = job.Tasks.AddNew("Package as HLS", packager, PackagerPreset, TaskOptions.None);
 hlsTask.InputAssets.Add(smoothStreamAsset);
